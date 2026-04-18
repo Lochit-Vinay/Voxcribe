@@ -291,10 +291,5 @@ def test_summary():
         })
 
 if __name__ == "__main__":
-    print("🚀 Starting Flask server...")
-    # For development
-    if os.getenv("FLASK_ENV") == "development":
-        app.run(debug=True, host="0.0.0.0", port=PORT)
-    else:
-        # For production (gunicorn will handle this)
-        app.run(host="0.0.0.0", port=PORT)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
