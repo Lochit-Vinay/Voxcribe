@@ -31,18 +31,7 @@ export default function VoiceToNotesApp() {
   }
 
   const handleGoogleLogin = async () => {
-    setIsGoogleLoading(true)
-    try {
-      await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: "https://voxcribe-b9fs.vercel.app/auth/callback"
-        }
-      })
-    } catch (error) {
-      console.error("Google login error:", error)
-      setIsGoogleLoading(false)
-    }
+    alert("Login temporarily disabled");
   }
 
   const handleLogout = async () => {
