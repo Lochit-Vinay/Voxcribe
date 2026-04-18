@@ -1,3 +1,4 @@
+"use client";
 import { useFirebaseAuth } from "../lib/firebase/useFirebaseAuth";
 import { useState, useRef, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";

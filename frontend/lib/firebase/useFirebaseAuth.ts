@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from "react";
 import { auth } from "../firebase/firebase";
 import { onAuthStateChanged, signOut, User,RecaptchaVerifier,signInWithPhoneNumber,ConfirmationResult } from "firebase/auth";
