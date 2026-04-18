@@ -1,11 +1,7 @@
 flask
 flask-cors
-openai
-whisper
 openai-whisper
-torch
-firebase-admin
+torch --index-url https://download.pytorch.org/whl/cpu
 supabase
 requests
-gunicorn
 python-dotenv

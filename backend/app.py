@@ -11,24 +11,33 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Load Whisper once (not on every request)
-print("🎤 Loading Whisper model...")
-model = whisper.load_model("base")
-print("✅ Whisper model loaded successfully")
+# Lazy load Whisper model
+model = None
+
+def get_model():
+    global model
+    if model is None:
+        print("🎤 Loading Whisper model...")
+        model = whisper.load_model("base")
+        print("✅ Whisper loaded")
+    return model
 
 # Environment variables
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://mdyrsixljvfxpvyjtadi.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
-PORT = int(os.getenv("PORT", 5000))
+PORT = int(os.getenv("PORT", 10000))
 
 # Validate required environment variables
 if not SUPABASE_KEY:
-    raise ValueError("SUPABASE_KEY environment variable is required")
-if not HF_TOKEN:
-    raise ValueError("HF_TOKEN environment variable is required")
+    print("⚠️ SUPABASE_KEY missing")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+if not HF_TOKEN:
+    print("⚠️ HF_TOKEN missing")
+
+supabase = None
+if SUPABASE_KEY:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Flask setup
 app = Flask(__name__)
@@ -161,7 +170,8 @@ def upload_audio():
     # Transcribe with Whisper
     try:
         print("🎯 Starting Whisper transcription...")
-        result = model.transcribe(file_path)
+        whisper_model = get_model()
+        result = whisper_model.transcribe(file_path)
         transcription_text = result["text"]
         duration = result.get("duration", 0)
         print(f"✅ Transcription completed: {len(transcription_text)} characters")
@@ -220,6 +230,10 @@ def upload_audio():
 def regenerate_summary(recording_id):
     """Regenerate summary for existing recording"""
     print(f"🔄 Regenerating summary for recording: {recording_id}")
+
+    if supabase is None:
+        print("❌ Supabase client not initialized")
+        return jsonify({'success': False, 'error': 'Database not configured'}), 500
     
     try:
         # Get existing recording
@@ -291,5 +305,5 @@ def test_summary():
         })
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
