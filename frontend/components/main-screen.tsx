@@ -199,7 +199,7 @@ export default function MainScreen({
       const formData = new FormData();
       formData.append("audio", blob, uniqueName);
 
-      const response = await fetch("http://127.0.0.1:5400/transcribe", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transcribe`, {
         method: "POST",
         body: formData,
       });
@@ -288,7 +288,7 @@ export default function MainScreen({
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:5000/regenerate-summary/${noteId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/regenerate-summary/${noteId}`,
         {
           method: "POST",
         }
