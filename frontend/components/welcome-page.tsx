@@ -13,18 +13,13 @@ interface WelcomePageProps {
   toggleTheme: () => void
   onGoogleLogin: () => Promise<void>  
   isGoogleLoading: boolean
-  firebaseReady: boolean
-  
-
-
 }
 
 export default function WelcomePage({
   isDarkMode,
   toggleTheme,
   onGoogleLogin,
-  isGoogleLoading,
-  firebaseReady
+  isGoogleLoading
 }: WelcomePageProps) {
   
   
@@ -170,14 +165,14 @@ export default function WelcomePage({
 
                 <Button
                   onClick={onGoogleLogin}
-                  disabled={isGoogleLoading || !firebaseReady}
+                  disabled={isGoogleLoading}
                   variant="outline"
                   className={cn(
                     "w-full h-12 text-left justify-start space-x-3 transition-all duration-200 hover:scale-[1.02]",
                     isDarkMode
                       ? "border-gray-600 bg-gray-800/50 text-gray-200 hover:bg-gray-700 hover:text-white hover:border-gray-500"
                       : "border-gray-400 bg-gray-100/50 text-gray-800 hover:bg-gray-200 hover:border-gray-500",
-                    (!firebaseReady || isGoogleLoading) && "opacity-50 cursor-not-allowed",
+                    isGoogleLoading && "opacity-50 cursor-not-allowed",
                   )}
                 >
                   <div className="w-5 h-5 bg-white rounded-sm flex items-center justify-center">
@@ -205,7 +200,7 @@ export default function WelcomePage({
                     )}
                   </div>
                   <span className="flex-1">
-                    {!firebaseReady ? "Initializing..." : isGoogleLoading ? "Signing in..." : "Continue with Google"}
+                    {isGoogleLoading ? "Signing in..." : "Continue with Google"}
                   </span>
                 </Button>
 

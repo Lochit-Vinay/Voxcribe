@@ -1,11 +1,11 @@
 "use client";
-import { useFirebaseAuth } from "../lib/firebase/useFirebaseAuth";
 import { useState, useRef, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabaseClient";
 import {
   Bookmark,
   Clock,
@@ -28,17 +28,15 @@ interface Note {
   isBookmarked?: boolean;
 }
 
-// Add isDarkMode prop to the interface
 interface HistoryProps {
   isDarkMode: boolean;
   refreshTrigger?: number;
-  onRefetch?: () => void; // Add refetch function prop
-  currentSessionNoteIds?: string[]; // Add this to exclude current session notes
+  onRefetch?: () => void;
+  currentSessionNoteIds?: string[];
 }
 
-// Update the component to accept both isDarkMode and refreshTrigger as props
 export default function History({ isDarkMode, refreshTrigger, onRefetch, currentSessionNoteIds = [] }: HistoryProps) {
-  const { transcriptions } = useFirebaseAuth();
+  const [transcriptions, setTranscriptions] = useState<any[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [zoomedNote, setZoomedNote] = useState<string | null>(null);
   const [bookmarkedNotes, setBookmarkedNotes] = useState<Set<string>>(
@@ -64,12 +62,24 @@ export default function History({ isDarkMode, refreshTrigger, onRefetch, current
     setZoomedNote(null);
   };
 
-  // Define fetchHistoryData function to refetch transcriptions
-  const fetchHistoryData = () => {
+  const fetchHistoryData = async () => {
     console.log("Refreshing history data...");
-    // Call the refetch function if provided
-    if (onRefetch) {
-      onRefetch();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from("recordings")
+        .select("*")
+        .eq("firebase_uid", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setTranscriptions(data || []);
+      
+      if (onRefetch) onRefetch();
+    } catch (err) {
+      console.error("Failed to fetch transcriptions:", err);
     }
   };
 
@@ -81,16 +91,13 @@ export default function History({ isDarkMode, refreshTrigger, onRefetch, current
       summary: t.summary || "",
       duration: t.duration || "—",
       createdAt: t.created_at ? new Date(t.created_at).toLocaleDateString() : "—",
-      tags: Array.isArray(t.tags) ? t.tags : t.tags ? [t.tags] : [], // Ensure tags is always an array
+      tags: Array.isArray(t.tags) ? t.tags : t.tags ? [t.tags] : [],
       speaker: t.speaker || "Unknown",
     }))
-    .filter((note) => !currentSessionNoteIds.includes(note.id)); // Filter out current session notes
+    .filter((note) => !currentSessionNoteIds.includes(note.id));
 
   useEffect(() => {
-    // Refetch data when refreshTrigger changes
-    if (refreshTrigger !== undefined) {
-      fetchHistoryData();
-    }
+    fetchHistoryData();
   }, [refreshTrigger]);
 
   return (

@@ -36,7 +36,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "../lib/supabaseClient";
-import { auth as firebaseAuth } from "../lib/firebase/firebase";
 import History from "../components/history";
 
 interface Note {
@@ -211,8 +210,7 @@ export default function MainScreen({
 
       if (!response.ok) throw new Error("Failed to transcribe audio");
 
-      const firebaseUser = firebaseAuth.currentUser;
-      if (!firebaseUser) {
+      if (!user) {
         throw new Error("User is not logged in");
       }
 
@@ -225,7 +223,7 @@ export default function MainScreen({
 
       // Use custom speaker name if provided, otherwise fallback to user's display name
       const finalSpeakerName =
-        speakerName.trim() || firebaseUser.displayName || "Unknown Speaker";
+        speakerName.trim() || user.user_metadata?.full_name || "Unknown Speaker";
 
       // Use the actual summary from Flask response
       const actualSummary = data.summary || "Summary generation failed";
@@ -235,7 +233,7 @@ export default function MainScreen({
         .from("recordings")
         .insert([
           {
-            firebase_uid: firebaseUser.uid,
+            firebase_uid: user.id,
             audio_url: audioUrl,
             text_url: null,
             transcription: data.transcription,
@@ -496,7 +494,7 @@ export default function MainScreen({
     };
   }, [zoomedNote]);
 
-  console.log("User photo URL:", user?.photoURL);
+  console.log("User photo URL:", user?.user_metadata?.avatar_url);
 
   console.log("🔍 Notes count:", notes.length);
   console.log("🔍 Filtered notes count:", filteredNotes.length);
@@ -506,19 +504,18 @@ export default function MainScreen({
   // Add this useEffect after your other state declarations
   useEffect(() => {
     const fetchRecordings = async () => {
-      const firebaseUser = firebaseAuth.currentUser;
-      if (!firebaseUser) {
-        console.log("❌ No Firebase user found");
+      if (!user) {
+        console.log("❌ No Supabase user found");
         return;
       }
 
-      console.log("🔄 Fetching recordings for user:", firebaseUser.uid);
+      console.log("🔄 Fetching recordings for user:", user.id);
 
       try {
         const { data, error } = await supabase
           .from("recordings")
           .select("*")
-          .eq("firebase_uid", firebaseUser.uid)
+          .eq("firebase_uid", user.id)
           .order("created_at", { ascending: false });
 
         if (error) {
@@ -769,9 +766,9 @@ export default function MainScreen({
                     )}
                     onClick={() => setShowUserMenu(!showUserMenu)}
                   >
-                    {user.photoURL && (
+                    {user?.user_metadata?.avatar_url && (
                       <img
-                        src={user.photoURL}
+                        src={user.user_metadata.avatar_url}
                         alt="Profile"
                         style={{
                           width: "32px",
@@ -782,7 +779,7 @@ export default function MainScreen({
                     )}
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-sm font-medium truncate ">
-                        {user.displayName}
+                        {user.user_metadata?.full_name || "User"}
                       </p>
                       <p className="text-xs opacity-70 truncate ">
                         {user.email}
